@@ -31,10 +31,19 @@ async function run() {
 
         app.post('/products', async (req, res) => {
             const product = req.body;
-            const result = await tokenCollection.insertOne(product)
-            res.send(result)
-            console.log(result);
+            const email = req.headers.authorization.split(' ')[0];
+            const token = req.headers.authorization.split(' ')[1];
+            const decoded = verifyToken(token);
+            if (email === decoded.email) {
+                const result = await tokenCollection.insertOne(product)
+                res.send(result)
+            }
+        })
 
+        app.post('/signin', async (req, res) => {
+            const email = req.body;
+            const token = jwt.sign(email, process.env.ACCESS_TOKEN);
+            res.send({ token })
         })
 
 
@@ -46,6 +55,13 @@ async function run() {
     finally {
 
     }
-
 }
 run().catch(console.dir)
+
+function verifyToken(token) {
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (error, decoded) {
+        if (error) { email = 'Invalid email' }
+        if (decoded) { email = decoded; }
+    })
+    return email;
+}
